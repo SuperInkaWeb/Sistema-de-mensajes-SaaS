@@ -1,0 +1,187 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Company {
+  id               String            @id @default(uuid())
+  name             String
+  planStatus       String            @default("active") @map("plan_status")
+  config           Json?             @map("config")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  contacts         Contact[]
+  users            User[]
+  groups           WhatsappGroup[]
+  whatsappSessions WhatsappSession[]
+  quickReplies     QuickReply[]
+
+  @@map("companies")
+}
+
+model User {
+  id               String            @id @default(uuid())
+  companyId        String            @map("company_id")
+  email            String            @unique
+  passwordHash     String            @map("password_hash")
+  role             String            @default("agent")
+  name             String
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  isActive         Boolean           @default(true) @map("is_active")
+  parentId         String?           @map("parent_id")
+  whatsappPhone String? @map("whatsapp_phone")
+  aiInstruction String? @map("ai_instruction") @db.Text
+  notes         Note[]
+  activities    ContactActivity[]
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  whatsappSessions WhatsappSession[]
+
+  @@map("users")
+}
+
+
+model WhatsappSession {
+  id             String   @id @default(uuid())
+  companyId      String   @map("company_id")
+  userId         String?  @map("user_id")
+  phoneNumber    String?  @map("phone_number")
+  sessionName    String   @map("session_name")
+  sessionStatus  String   @default("disconnected") @map("session_status")
+  qrCodeString   String?  @map("qr_code_string")
+  connectionInfo Json?    @map("connection_info")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  campaignType   String   @default("general") @map("campaign_type")
+  aiEnabled      Boolean  @default(false) @map("ai_enabled")
+  chats          Chat[]
+  whatsappGroups WhatsappGroup[]
+  company        Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user           User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("whatsapp_sessions")
+}
+
+
+model Chat {
+  id                 String          @id @default(uuid())
+  whatsappSessionId  String          @map("whatsapp_session_id")
+  remoteJid          String          @map("remote_jid")
+  contactName        String?         @map("contact_name")
+  lastMessagePreview String?         @map("last_message_preview")
+  lastMessageAt      DateTime?       @map("last_message_at")
+  unreadCount        Int             @default(0) @map("unread_count")
+  createdAt          DateTime        @default(now()) @map("created_at")
+  updatedAt          DateTime        @updatedAt @map("updated_at")
+  whatsappSession    WhatsappSession @relation(fields: [whatsappSessionId], references: [id], onDelete: Cascade)
+  messages           Message[]
+
+  @@unique([whatsappSessionId, remoteJid])
+  @@map("chats")
+}
+
+model Message {
+  id          String   @id @default(uuid())
+  chatId      String   @map("chat_id")
+  senderId    String?  @map("sender_id")
+  content     String?
+  mediaUrl    String?  @map("media_url")
+  messageType String   @default("text") @map("message_type")
+  timestamp   DateTime
+  waMessageId String?  @map("wa_message_id")
+  fromMe      Boolean  @default(false) @map("from_me")
+  createdAt   DateTime @default(now()) @map("created_at")
+  chat        Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
+
+model WhatsappGroup {
+  id         String                @id @default(uuid())
+  companyId  String                @map("company_id")
+  sessionId  String                @map("session_id")
+  groupJid   String                @map("group_jid")
+  name       String
+  inviteCode String?               @map("invite_code")
+  createdAt  DateTime              @default(now()) @map("created_at")
+  updatedAt  DateTime              @updatedAt @map("updated_at")
+  whatsappSession WhatsappSession       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  members         WhatsappGroupMember[]
+  company         Company               @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_groups")
+}
+
+model WhatsappGroupMember {
+  id       String        @id @default(uuid())
+  groupId  String        @map("group_id")
+  phone    String
+  name     String?
+  joinedAt DateTime      @map("joined_at")
+  isAdmin  Boolean       @default(false) @map("is_admin")
+  group    WhatsappGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, phone])
+  @@map("whatsapp_group_members")
+}
+
+model Contact {
+  id          String   @id @default(uuid())
+  companyId   String   @map("company_id")
+  phone       String
+  name        String
+  isAgent     Boolean  @default(false) @map("is_agent")
+  agentUserId String?  @map("agent_user_id")
+  tags        String[] @default([])
+  notes       String?
+  kanbanStatus String  @default("lead") @map("kanban_status")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  company     Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  activities  ContactActivity[]
+
+  @@unique([companyId, phone])
+  @@map("contacts")
+}
+
+model ContactActivity {
+  id          String   @id @default(uuid())
+  contactId   String   @map("contact_id")
+  userId      String   @map("user_id")
+  type        String   // 'call', 'note', 'status_change'
+  description String
+  duration    Int?     // duration in minutes for calls
+  createdAt   DateTime @default(now()) @map("created_at")
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("contact_activities")
+}
+
+model QuickReply {
+  id        String   @id @default(uuid())
+  companyId String   @map("company_id")
+  shortcut  String
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, shortcut])
+  @@map("quick_replies")
+}
