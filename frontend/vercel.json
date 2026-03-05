@@ -2,7 +2,7 @@
     "rewrites": [
         {
             "source": "/api/:path*",
-            "destination": "https://sistema-whassap.onrender.com/:path*"
+            "destination": "https://sistema-whassap.onrender.com/api/:path*"
         },
         {
             "source": "/(.*)",
