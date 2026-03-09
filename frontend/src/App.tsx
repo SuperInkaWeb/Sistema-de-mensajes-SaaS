@@ -14,6 +14,7 @@ import ContactsPage from './pages/ContactsPage';
 import DashboardPage from './pages/DashboardPage';
 import QuickRepliesPage from './pages/QuickRepliesPage';
 import KanbanPage from './pages/KanbanPage';
+import ReportsPage from './pages/ReportsPage';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
     const token = useAuthStore((s: AuthState) => s.token);
@@ -44,6 +45,7 @@ export default function App() {
                     <Route path="contacts" element={<ContactsPage />} />
                     <Route path="quick-replies" element={<QuickRepliesPage />} />
                     <Route path="kanban" element={<KanbanPage />} />
+                    <Route path="reports" element={<ReportsPage />} />
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

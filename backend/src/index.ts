@@ -14,6 +14,7 @@ import groupRoutes from './routes/group.routes';
 import contactRoutes from './routes/contact.routes';
 import activityRoutes from './routes/activity.routes';
 import statsRoutes from './routes/stats.routes';
+import reportRoutes from './routes/report.routes';
 import { errorHandler } from './middleware/error.middleware';
 import { setupSocketIO } from './socket/socket.handler';
 import { setSocketIO, restoreAllSessions } from './services/whatsapp.service';
@@ -60,6 +61,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/contacts', contactRoutes);
 app.use('/api/contacts', activityRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/reports', reportRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

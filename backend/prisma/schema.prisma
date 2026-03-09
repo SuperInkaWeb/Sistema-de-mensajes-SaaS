@@ -20,6 +20,7 @@ model Company {
   groups           WhatsappGroup[]
   whatsappSessions WhatsappSession[]
   quickReplies     QuickReply[]
+  dailyReports     DailyReport[]
 
   @@map("companies")
 }
@@ -39,6 +40,7 @@ model User {
   aiInstruction String? @map("ai_instruction") @db.Text
   notes         Note[]
   activities    ContactActivity[]
+  dailyReports  DailyReport[]
   company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
   whatsappSessions WhatsappSession[]
 
@@ -184,4 +186,33 @@ model QuickReply {
 
   @@unique([companyId, shortcut])
   @@map("quick_replies")
+}
+
+model DailyReport {
+  id               String   @id @default(uuid())
+  companyId        String   @map("company_id")
+  userId           String   @map("user_id")
+  reportDate       DateTime @map("report_date")
+  zone             String?
+  businessType     String?  @map("business_type")
+  companiesVisited String?  @db.Text @map("companies_visited")
+  contactName      String?  @map("contact_name")
+  contactPhone     String?  @map("contact_phone")
+  contactEmail     String?  @map("contact_email")
+  contactRole      String?  @map("contact_role")
+  contactsMade     Int?     @map("contacts_made")
+  meetingsHeld     Int?     @map("meetings_held")
+  proposalsSent    Int?     @map("proposals_sent")
+  mainObjection    String?  @db.Text @map("main_objection")
+  whatWorked       String?  @db.Text @map("what_worked")
+  whatToImprove    String?  @db.Text @map("what_to_improve")
+  status           String?  @default("pendiente")
+  planPurchased    String?  @map("plan_purchased")
+  nextStep         String?  @db.Text @map("next_step")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+  company          Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("daily_reports")
 }
