@@ -6,9 +6,9 @@ let socket: Socket | null = null;
 export const getSocket = (): Socket => {
     if (!socket) {
         const token = useAuthStore.getState().token;
-        socket = io('http://localhost:3001', {
+        socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3001', {
             auth: { token },
-            transports: ['websocket'],
+            transports: ['websocket', 'polling'],
         });
 
         socket.on('connect', () => {
