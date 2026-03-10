@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../lib/api';
 import { useAuthStore } from '../store/auth.store';
+import * as XLSX from 'xlsx';
 
 interface DailyReport {
     id: string;
@@ -84,6 +85,34 @@ export default function ReportsPage() {
     };
 
     useEffect(() => { load(); }, []);
+
+    const exportToExcel = () => {
+        const rows = filtered.map(r => ({
+            'Fecha': new Date(r.reportDate).toLocaleDateString('es-PE'),
+            'Vendedor': r.user?.name || user?.name || '',
+            'Zona': r.zone || '',
+            'Giro': r.businessType || '',
+            'Empresas Visitadas': r.companiesVisited || '',
+            'Contacto': r.contactName || '',
+            'Cargo': r.contactRole || '',
+            'Teléfono': r.contactPhone || '',
+            'Email': r.contactEmail || '',
+            'Decisores Contactados': r.contactsMade ?? '',
+            'Reuniones': r.meetingsHeld ?? '',
+            'Propuestas': r.proposalsSent ?? '',
+            'Objeción Principal': r.mainObjection || '',
+            '¿Qué funcionó?': r.whatWorked || '',
+            '¿Qué mejorar?': r.whatToImprove || '',
+            'Estado': getStatusLabel(r.status),
+            'Plan Comprado': r.planPurchased || '',
+            'Próximo Paso': r.nextStep || '',
+        }));
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Informes');
+        const fileName = `informes_diarios_${new Date().toISOString().split('T')[0]}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -173,7 +202,7 @@ export default function ReportsPage() {
             </div>
 
             {/* Filter */}
-            <div style={{ ...card, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ ...card, marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                 <label style={{ ...lbl, margin: 0, whiteSpace: 'nowrap' }}>Filtrar por fecha:</label>
                 <input
                     type="date"
@@ -187,6 +216,28 @@ export default function ReportsPage() {
                     </button>
                 )}
                 <span style={{ marginLeft: 'auto', color: '#64748b', fontSize: '12px' }}>{filtered.length} informe(s)</span>
+                <button
+                    onClick={exportToExcel}
+                    disabled={filtered.length === 0}
+                    style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        padding: '8px 16px',
+                        background: filtered.length === 0
+                            ? '#1e2535'
+                            : 'linear-gradient(135deg, #16a34a, #15803d)',
+                        border: '1px solid ' + (filtered.length === 0 ? '#2d3348' : '#22c55e44'),
+                        borderRadius: '8px',
+                        color: filtered.length === 0 ? '#475569' : '#fff',
+                        cursor: filtered.length === 0 ? 'not-allowed' : 'pointer',
+                        fontSize: '13px', fontWeight: '600',
+                        boxShadow: filtered.length === 0 ? 'none' : '0 2px 8px rgba(34,197,94,0.25)',
+                        transition: 'all 0.2s',
+                    }}
+                    title="Exportar informes a Excel"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    Exportar Excel
+                </button>
             </div>
 
             {error && <div style={{ background: '#ef444422', border: '1px solid #ef444444', color: '#f87171', padding: '10px 14px', borderRadius: '8px', marginBottom: '16px', fontSize: '13px' }}>{error}</div>}
