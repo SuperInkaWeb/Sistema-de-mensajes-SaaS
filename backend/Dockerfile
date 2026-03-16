@@ -7,7 +7,10 @@ WORKDIR /app
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install
+
+# Reinstalar prisma y typescript globalmente para asegurar que estén disponibles
+RUN npm install -g prisma typescript
 
 # Copy source
 COPY . .
